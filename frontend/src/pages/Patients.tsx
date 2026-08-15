@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import CreatePatientModal from '../components/CreatePatientModal';
 import { patientService } from '../services/patientService';
 import type { Patient } from '../services/patientService';
@@ -51,6 +52,7 @@ function Patients() {
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Last Name</th>
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>First Name</th>
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Age</th>
+              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -60,6 +62,11 @@ function Patients() {
                 <td style={{ border: '1px solid #ddd', padding: '8px' }}>{patient.lastName}</td>
                 <td style={{ border: '1px solid #ddd', padding: '8px' }}>{patient.firstName}</td>
                 <td style={{ border: '1px solid #ddd', padding: '8px' }}>{patient.age}</td>
+                <td style={{ border: '1px solid #ddd', padding: '8px' }}>
+                  <Link to={`/patients/${patient.id}`} style={{ textDecoration: 'none' }}>
+                    <button type="button">Consulter</button>
+                  </Link>
+                </td>
               </tr>
             ))}
           </tbody>
