@@ -25,7 +25,7 @@ export interface MulterFile {
 
 @Injectable()
 export class FilesService {
-  private readonly UPLOADS_DIR = path.join(__dirname, '..', '..', 'uploads', 'patients');
+  private readonly UPLOADS_DIR: string;
 
   constructor(
     @InjectRepository(File)
@@ -33,6 +33,10 @@ export class FilesService {
     @InjectRepository(Patient)
     private readonly patientRepository: Repository<Patient>,
   ) {
+    // Calculate absolute path to uploads directory from project root
+    // __dirname = src/files, so .. goes to src, .. goes to backend (project root)
+    const projectRoot = path.join(__dirname, '..', '..');
+    this.UPLOADS_DIR = path.join(projectRoot, 'uploads', 'patients');
     // Ensure uploads directory exists
     this.ensureUploadsDirectory();
   }
@@ -96,10 +100,12 @@ export class FilesService {
     fs.writeFileSync(filePath, file.buffer);
 
     // Create file record
+    // Store the relative path from project root
+    const storedFilePath = path.join('uploads', 'patients', String(patientId), storedName);
     const newFile = this.fileRepository.create({
       originalName: file.originalname,
       storedName,
-      filePath: path.relative(path.join(__dirname, '..', '..'), filePath),
+      filePath: storedFilePath,
       fileType: path.extname(file.originalname).replace('.', ''),
       fileSize: file.size,
       patient,
@@ -118,18 +124,18 @@ export class FilesService {
     });
   }
 
-  async getFile(fileId: number, user: User): Promise<File> {
+  async getFile(patientId: number, fileId: number, user: User): Promise<File> {
     const file = await this.fileRepository.findOne({
       where: { 
         id: fileId,
-        patient: { user: { id: user.id } }
+        patient: { id: patientId, user: { id: user.id } }
       },
       relations: ['patient'],
     });
     
     if (!file) {
       throw new ForbiddenException(
-        `File with ID ${fileId} does not belong to user`,
+        `File with ID ${fileId} does not belong to patient ${patientId} or user`,
       );
     }
     return file;

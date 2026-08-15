@@ -7,7 +7,8 @@ import {
   UseInterceptors,
   UploadedFile,
   Delete,
-
+  Res,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,6 +17,7 @@ import {
   ApiParam,
   ApiBearerAuth,
   ApiConsumes,
+  ApiProduces,
   ApiBody,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -25,6 +27,9 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 import { File as FileEntity } from './entities/file.entity';
+import type { Response } from 'express';
+import * as fs from 'fs';
+import * as path from 'path';
 
 
 @ApiTags('files')
@@ -80,6 +85,40 @@ export class FilesController {
     @CurrentUser() user: User,
   ) {
     return this.filesService.getFilesByPatient(+patientId, user);
+  }
+
+  @Get('/patients/:patientId/files/:fileId/download')
+  @ApiOperation({ 
+    summary: 'Download a file', 
+    description: 'Downloads a specific file belonging to the authenticated user' 
+  })
+  @ApiParam({ name: 'patientId', type: Number, description: 'Patient ID', example: 1 })
+  @ApiParam({ name: 'fileId', type: Number, description: 'File ID', example: 1 })
+  @ApiProduces('application/octet-stream')
+  @ApiResponse({ status: 200, description: 'File downloaded successfully' })
+  @ApiResponse({ status: 404, description: 'File not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - File does not belong to user' })
+  async downloadFile(
+    @Param('patientId') patientId: string,
+    @Param('fileId') fileId: string,
+    @CurrentUser() user: User,
+    @Res() res: Response,
+  ) {
+    const file = await this.filesService.getFile(+patientId, +fileId, user);
+    
+    const absolutePath = path.join(__dirname, '..', '..', file.filePath);
+    
+    if (!fs.existsSync(absolutePath)) {
+      throw new NotFoundException(`File not found: ${file.originalName}`);
+    }
+
+    const fileStream = fs.createReadStream(absolutePath);
+    
+    res.setHeader('Content-Disposition', `attachment; filename="${file.originalName}"`);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    
+    fileStream.pipe(res);
   }
 
   @Delete('/patients/:patientId/files/:fileId')
