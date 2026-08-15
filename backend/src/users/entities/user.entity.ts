@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Patient } from "src/patients/entities/patient.entity";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class User {
@@ -13,4 +14,9 @@ export class User {
 
   @Column()
   password!: string;
+
+  @OneToMany(() => Patient, (patient) => patient.user, {
+    cascade: true,
+  })
+  patients: Patient[] = [];
 }
