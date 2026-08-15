@@ -18,5 +18,5 @@ export class User {
   @OneToMany(() => Patient, (patient) => patient.user, {
     cascade: true,
   })
-  patients: Patient[] = [];
+  patients!: Patient[];
 }

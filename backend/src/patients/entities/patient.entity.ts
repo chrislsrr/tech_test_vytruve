@@ -16,7 +16,7 @@ export class Patient {
   age!: number;
 
   @ManyToOne(() => User, (user) => user.patients, {
-    cascade: true,
+    onDelete: 'CASCADE',
   })
   user!: User;
 }
