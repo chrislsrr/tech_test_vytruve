@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from './users/entities/user.entity';
 @Module({
   imports: [
     // Configuration module
@@ -19,7 +20,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       useFactory: (configService: ConfigService) => ({
         type: 'sqlite',
         database: configService.get('DB_PATH', './database.sqlite'),
-        entities: [],
+        entities: [User],
         synchronize: true, // For development only
         logging: true,
       }),
