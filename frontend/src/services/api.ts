@@ -10,12 +10,22 @@ const api = axios.create({
 });
 
 // Intercepteur pour ajouter le token d'authentification si disponible
+// Sauf pour les routes d'authentification (login, register)
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    if (token) {
+    const isAuthRoute = config.url?.includes('/auth/');
+    
+    
+    
+    if (token && token !== 'undefined' && token !== 'null' && !isAuthRoute) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else if (!token || token === 'undefined' || token === 'null') {
+      // Supprimer le header Authorization si présent
+      delete config.headers.Authorization;
     }
+    
+    
     return config;
   },
   (error) => {
@@ -27,16 +37,6 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response) {
-      // Erreur avec réponse du serveur
-      console.error('API Error:', error.response.status, error.response.data);
-    } else if (error.request) {
-      // Erreur sans réponse
-      console.error('API Error: No response received');
-    } else {
-      // Erreur de configuration
-      console.error('API Error:', error.message);
-    }
     return Promise.reject(error);
   }
 );

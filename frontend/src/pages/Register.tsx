@@ -22,10 +22,13 @@ function Register() {
 
     try {
       const response = await userService.register(formData);
-      localStorage.setItem('token', response.token);
+      if (!response?.accessToken) {
+        throw new Error('No accessToken received from server');
+      }
+      localStorage.setItem('token', response.accessToken);
       navigate('/patients');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setError(err.response?.data?.message || err.message || 'Registration failed. Please try again.');
     }
   };
 

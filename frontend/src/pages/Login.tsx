@@ -21,10 +21,13 @@ function Login() {
 
     try {
       const response = await userService.login(formData);
-      localStorage.setItem('token', response.token);
+      if (!response?.accessToken) {
+        throw new Error('No accessToken received from server');
+      }
+      localStorage.setItem('token', response.accessToken);
       navigate('/patients');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      setError(err.response?.data?.message || err.message || 'Login failed. Please try again.');
     }
   };
 

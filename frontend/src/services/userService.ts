@@ -13,8 +13,8 @@ interface LoginUserDto {
 }
 
 interface AuthResponse {
-  token: string;
-  user: {
+  accessToken: string;
+  user?: {
     id: string;
     name: string;
     email: string;
