@@ -1,26 +1,75 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
+import { Patient } from './entities/patient.entity';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class PatientsService {
-  create(createPatientDto: CreatePatientDto) {
-    return 'This action adds a new patient';
+  constructor(
+    @InjectRepository(Patient)
+    private readonly patientRepository: Repository<Patient>,
+  ) {}
+
+  async create(
+    createPatientDto: CreatePatientDto,
+    user: User,
+  ): Promise<Patient> {
+    const patient = this.patientRepository.create({
+      ...createPatientDto,
+      user,
+    });
+    return await this.patientRepository.save(patient);
   }
 
-  findAll() {
-    return `This action returns all patients`;
+  async findAll(user: User): Promise<Patient[]> {
+    return await this.patientRepository.find({
+      where: { user: { id: user.id } },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} patient`;
+  async findOne(id: number, user: User): Promise<Patient> {
+    const patient = await this.patientRepository.findOne({
+      where: { id, user: { id: user.id } },
+    });
+    if (!patient) {
+      throw new NotFoundException(
+        `Patient with ID ${id} not found or does not belong to user`,
+      );
+    }
+    return patient;
   }
 
-  update(id: number, updatePatientDto: UpdatePatientDto) {
-    return `This action updates a #${id} patient`;
+  async update(
+    id: number,
+    updatePatientDto: UpdatePatientDto,
+    user: User,
+  ): Promise<Patient> {
+    const patient = await this.verifyPatientOwnership(id, user);
+    this.patientRepository.merge(patient, updatePatientDto);
+    return await this.patientRepository.save(patient);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} patient`;
+  async remove(id: number, user: User): Promise<void> {
+    const patient = await this.verifyPatientOwnership(id, user);
+    await this.patientRepository.remove(patient);
+  }
+
+  async verifyPatientOwnership(id: number, user: User): Promise<Patient> {
+    const patient = await this.patientRepository.findOne({
+      where: { id, user: { id: user.id } },
+    });
+    if (!patient) {
+      throw new ForbiddenException(
+        `Patient with ID ${id} does not belong to user`,
+      );
+    }
+    return patient;
   }
 }
