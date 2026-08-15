@@ -8,6 +8,8 @@ import { User } from './users/entities/user.entity';
 import { PatientsModule } from './patients/patients.module';
 import { Patient } from './patients/entities/patient.entity';
 import { AuthModule } from './auth/auth.module';
+import { FilesModule } from './files/files.module';
+import { File } from './files/entities/file.entity';
 
 @Module({
   imports: [
@@ -24,7 +26,7 @@ import { AuthModule } from './auth/auth.module';
       useFactory: (configService: ConfigService) => ({
         type: 'sqlite',
         database: configService.get('DB_PATH', './database.sqlite'),
-        entities: [User, Patient],
+        entities: [User, Patient, File],
         synchronize: true, // For development only
         logging: true,
       }),
@@ -32,6 +34,7 @@ import { AuthModule } from './auth/auth.module';
     UsersModule,
     PatientsModule,
     AuthModule,
+    FilesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

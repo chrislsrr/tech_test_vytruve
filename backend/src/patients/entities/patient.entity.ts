@@ -1,5 +1,6 @@
 import { User } from 'src/users/entities/user.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { File } from 'src/files/entities/file.entity';
+import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
 @Entity()
@@ -25,4 +26,11 @@ export class Patient {
   })
   @ApiProperty({ type: () => User, description: 'User who owns this patient' })
   user!: User;
+
+  @OneToMany(() => File, (file) => file.patient, {
+    cascade: true,
+  })
+  @ApiProperty({ type: () => File, isArray: true, description: 'List of files belonging to this patient' })
+  files!: File[];
+
 }
