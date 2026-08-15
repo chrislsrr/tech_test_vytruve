@@ -7,6 +7,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './users/entities/user.entity';
 import { PatientsModule } from './patients/patients.module';
 import { Patient } from './patients/entities/patient.entity';
+import { AuthModule } from './auth/auth.module';
+
 @Module({
   imports: [
     // Configuration module
@@ -28,7 +30,9 @@ import { Patient } from './patients/entities/patient.entity';
       }),
     }),
     UsersModule,
-    PatientsModule],
+    PatientsModule,
+    AuthModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
