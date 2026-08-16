@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
 import { patientService } from '../services/patientService';
 import { fileService } from '../services/fileService';
+import { printService } from '../services/printService';
 import UploadFileModal from '../components/UploadFileModal';
+import StartPrintModal from '../components/StartPrintModal';
 import type { Patient } from '../services/patientService';
 import type { FileEntity } from '../services/fileService';
+import type { PrintJob } from '../services/printService';
 
 function PatientDetail() {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +21,11 @@ function PatientDetail() {
   const [files, setFiles] = useState<FileEntity[]>([]);
   const [filesLoading, setFilesLoading] = useState(true);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [selectedFileId, setSelectedFileId] = useState<string>('');
+  const [printJobs, setPrintJobs] = useState<PrintJob[]>([]);
+  const [printJobsLoading, setPrintJobsLoading] = useState(true);
+  const [printJobsError, setPrintJobsError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const fetchPatient = async () => {
@@ -62,9 +71,33 @@ function PatientDetail() {
     }
   };
 
+  const handlePrintStarted = () => {
+    fetchFiles();
+    fetchPrintJobs();
+  };
+
+  const fetchPrintJobs = async () => {
+    try {
+      setPrintJobsLoading(true);
+      const data = await printService.listPrintJobs();
+      setPrintJobs(data);
+      setPrintJobsError(null);
+    } catch (err: any) {
+      setPrintJobsError(err.response?.data?.message || 'Failed to fetch print jobs');
+    } finally {
+      setPrintJobsLoading(false);
+    }
+  };
+
+  const openPrintModal = (fileId: string) => {
+    setSelectedFileId(fileId);
+    setIsPrintModalOpen(true);
+  };
+
   useEffect(() => {
     fetchPatient();
     fetchFiles();
+    fetchPrintJobs();
   }, [id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,6 +224,7 @@ function PatientDetail() {
               <tr>
                 <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Name</th>
                 <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Size (MB)</th>
+                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Print</th>
                 <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Actions</th>
               </tr>
             </thead>
@@ -203,11 +237,20 @@ function PatientDetail() {
                   </td>
                   <td style={{ border: '1px solid #ddd', padding: '8px' }}>
                     <button
+                      onClick={() => openPrintModal(file.id)}
+                      type="button"
+                      style={{ backgroundColor: '#4CAF50', color: 'white' }}
+                    >
+                      Print
+                    </button>
+                  </td>
+                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>
+                    <button
                       onClick={() => handleDeleteFile(file.id)}
                       type="button"
                       style={{ backgroundColor: '#ff4444', color: 'white' }}
                     >
-                      Delete
+                      Supprimer
                     </button>
                   </td>
                 </tr>
@@ -222,6 +265,50 @@ function PatientDetail() {
           patientId={id || ''}
           onFileUploaded={handleFileUploaded}
         />
+
+        <StartPrintModal
+          isOpen={isPrintModalOpen}
+          onClose={() => setIsPrintModalOpen(false)}
+          fileId={selectedFileId}
+          patientId={id || ''}
+          onPrintStarted={handlePrintStarted}
+        />
+      </div>
+
+      <div style={{ marginTop: '40px' }}>
+        <h2>Print Jobs</h2>
+        {printJobsError && <p style={{ color: 'red' }}>{printJobsError}</p>}
+
+        {printJobsLoading ? (
+          <p>Loading print jobs...</p>
+        ) : !printJobs || printJobs.length === 0 ? (
+          <p>No print jobs found</p>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>ID</th>
+                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Status</th>
+                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Created At</th>
+                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>End Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.isArray(printJobs) && printJobs.map((job) => (
+                <tr key={job.id}>
+                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>{job.id}</td>
+                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>{job.status}</td>
+                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>
+                    {dayjs(job.createdAt).format('DD/MM/YYYY HH:mm:ss')}
+                  </td>
+                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>
+                    {job.endDate ? dayjs(job.endDate).format('DD/MM/YYYY HH:mm:ss') : '-'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <div style={{ marginTop: '40px', textAlign: 'center' }}>

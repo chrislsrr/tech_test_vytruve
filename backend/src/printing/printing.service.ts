@@ -105,8 +105,7 @@ export class PrintingService {
 
     // Get the full path to the file
     // file.filePath is relative to project root (e.g., 'uploads/patients/1/filename.ply')
-    const absoluteFilePath = path.join(__dirname, '..', '..','..', file.filePath);
-    
+    const absoluteFilePath = path.join(__dirname, '..', '..', file.filePath);
     if (!fs.existsSync(absoluteFilePath)) {
       throw new NotFoundException(`File not found on disk: ${file.originalName}`);
     }
