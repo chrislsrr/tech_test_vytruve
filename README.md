@@ -43,8 +43,6 @@ A full-stack application for orthoprosthetists to manage patients, upload 3D fil
 ## Prerequisites
 
 - Node.js >= 20.x
-- npm >= 10.x or yarn >= 1.x
-- Git
 
 ## Setup
 
